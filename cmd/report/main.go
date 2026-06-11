@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"genesys-license-report/internal/requests"
 	"log"
 	"net/http"
@@ -33,5 +34,5 @@ func main() {
 			userIds = append(userIds, val.ID)
 		}
 	}
-
+	fmt.Println(userIds)
 }
