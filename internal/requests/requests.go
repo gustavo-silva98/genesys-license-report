@@ -1,6 +1,7 @@
 package requests
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -124,4 +125,49 @@ func (api *APIGenesys) WorkerExtractUser(wg *sync.WaitGroup, jobs <-chan int, re
 		}
 		results <- page.Entities
 	}
+}
+
+func (api *APIGenesys) GetUserObservation(body []byte) (ResultUserObservation, error) {
+	var result ResultUserObservation
+	url := fmt.Sprintf("%v/api/v2/analytics/users/details/query", api.UrlBase)
+	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
+	if err != nil {
+		log.Printf("erro ao montar Request: %v", err)
+		return ResultUserObservation{}, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+api.AccessToken)
+
+	resp, err := api.HttpClient.Do(req)
+	if err != nil {
+		log.Printf("erro ao fazer request: %v", err)
+		return ResultUserObservation{}, err
+	}
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("erro ao ler body de resultado userObservation: %v", err)
+		return ResultUserObservation{}, err
+	}
+	defer resp.Body.Close()
+
+	json.Unmarshal(respBody, &result)
+	return result, nil
+
+}
+
+func BuildUserQueryBody(userId string, interval string, pageSize int, pageNumber int) ([]byte, error) {
+	predicate := Predicate{
+		Type:      "dimension",
+		Dimension: "userId",
+		Operator:  "matches",
+		Value:     userId,
+	}
+	body := QueryBody{
+		Interval: interval,
+		UserFilters: []Filter{
+			{Type: "and", Predicates: []Predicate{predicate}},
+		},
+		Paging: Paging{PageSize: pageSize, PageNumber: pageNumber},
+	}
+	return json.Marshal(body)
 }
