@@ -14,8 +14,6 @@ import (
 	"sync"
 )
 
-var response UserQueryEntities
-
 func (api *APIGenesys) ExtractUsersPool(numPages int, numWorkers int) ([]UserQuery, error) {
 	jobs := make(chan int, numPages)
 	results := make(chan []UserQuery, numPages)
@@ -44,6 +42,8 @@ func (api *APIGenesys) ExtractUsersPool(numPages int, numWorkers int) ([]UserQue
 }
 
 func (api *APIGenesys) ExtractUsersPage(pageNumber int) (UserQueryEntities, error) {
+
+	var response UserQueryEntities
 	log.Printf("Extraindo pagina Users %v\n", pageNumber)
 	url := fmt.Sprintf("%v/api/v2/users?pageSize=500&pageNumber=%v&expand=presence&state=active", api.UrlBase, pageNumber)
 	req, err := http.NewRequest("GET", url, nil)
@@ -104,6 +104,7 @@ func (api *APIGenesys) Authenticate() AuthResponse {
 	// lê o Body da request
 	body, _ := io.ReadAll(res.Body)
 	if res.StatusCode != 200 {
+		log.Println(res.StatusCode)
 		panic(res.Status)
 	}
 
@@ -143,6 +144,9 @@ func (api *APIGenesys) GetUserObservation(body []byte) (ResultUserObservation, e
 		log.Printf("erro ao fazer request: %v", err)
 		return ResultUserObservation{}, err
 	}
+	if resp.StatusCode != 200 {
+		log.Println(resp.StatusCode)
+	}
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("erro ao ler body de resultado userObservation: %v", err)
@@ -152,7 +156,6 @@ func (api *APIGenesys) GetUserObservation(body []byte) (ResultUserObservation, e
 
 	json.Unmarshal(respBody, &result)
 	return result, nil
-
 }
 
 func BuildUserQueryBody(userId string, interval string, pageSize int, pageNumber int) ([]byte, error) {

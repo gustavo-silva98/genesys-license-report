@@ -72,3 +72,8 @@ type UserDetailObservation struct {
 		OrganizationPresenceID string    `json:"organizationPresenceId"`
 	} `json:"primaryPresence"`
 }
+
+type JobObservation struct {
+	TimeString string
+	UserId     string
+}
